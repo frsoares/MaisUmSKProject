@@ -10,32 +10,56 @@ import GameplayKit
 
 class GameScene: SKScene {
 
-    private var label : SKLabelNode?
-    private var spinnyNode : SKShapeNode?
-
     private var moveableNode: SKNode?
+    private var ballNode: SKNode?
 
-    var ballNode: SKNode?
+    private var scoreNode: SKLabelNode?
+    private var goalP1Node: SKNode?
+    private var goalP2Node: SKNode?
+    private var scoreP1: Int = 0 { didSet { restartBall() } }
+    private var scoreP2: Int = 0 { didSet { restartBall() } }
 
     override func didMove(to view: SKView) {
-        
+
         self.physicsWorld.contactDelegate = self
+        self.scoreNode = self.childNode(withName: "score") as? SKLabelNode
+        self.goalP1Node = self.childNode(withName: "goalP1")
+        self.goalP2Node = self.childNode(withName: "goalP2")
 
         guard let ballNode = self.childNode(withName: "ball") else { return }
 
-        ballNode.physicsBody?.applyImpulse(CGVector(dx: 20.0, dy: 0.0))
         self.ballNode = ballNode
+        restartBall()
 
-        self.physicsBody = SKPhysicsBody(edgeLoopFrom: self.frame)
+        // configuring the scene's surrounding physics body
+        let worldBody: SKPhysicsBody = SKPhysicsBody(edgeLoopFrom: self.frame)
+        worldBody.restitution = 1.0
+        worldBody.friction = 0.0
+        worldBody.linearDamping = 0.0
+        worldBody.angularDamping = 0.0
+        self.physicsBody = worldBody
+    }
+
+    // MARK: Ball functions
+
+    fileprivate func kickOff() {
+        let direction = Bool.random() ? 1.0 : -1.0
+        let kick = 20.0 * direction
+        self.ballNode?.physicsBody?.applyImpulse(CGVector(dx: kick, dy: 0.0))
+    }
+
+    func restartBall() {
+        let tempPhysicsBody = ballNode?.physicsBody
+        ballNode?.physicsBody = nil
+        ballNode?.position = .zero
+        ballNode?.physicsBody = tempPhysicsBody
+
+        kickOff()
     }
 
     // MARK: Touch functions
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let label = self.label {
-            label.run(SKAction.init(named: "Pulse")!, withKey: "fadeInOut")
-        }
-        
         for touch in touches {
             let point = touch.location(in: self)
             let nodes = self.nodes(at: point)
@@ -44,7 +68,7 @@ class GameScene: SKScene {
                 if node == self {
                     print("There's self")
                 } else {
-                    if node != ballNode {
+                    if ![ballNode, goalP1Node, goalP2Node].contains(node) {
                         moveableNode = node
                     }
                 }
@@ -79,7 +103,7 @@ class GameScene: SKScene {
     // MARK: update function
 
     override func update(_ currentTime: TimeInterval) {
-        // Called before each frame is rendered
+        scoreNode?.text = "\(scoreP1) x \(scoreP2)"
     }
 }
 
@@ -88,6 +112,12 @@ class GameScene: SKScene {
 extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
         print("Contact started between \(contact.bodyA) and \(contact.bodyB)")
+        let bodies = [contact.bodyA.node, contact.bodyB.node]
+        if bodies.contains([goalP1Node, ballNode]) {
+            scoreP2 += 1
+        } else if bodies.contains([goalP2Node, ballNode]) {
+            scoreP1 += 1
+        }
     }
 
     func didEnd(_ contact: SKPhysicsContact) {
