@@ -16,8 +16,8 @@ class GameScene: SKScene {
     private var scoreNode: SKLabelNode?
     private var goalP1Node: SKNode?
     private var goalP2Node: SKNode?
-    private var scoreP1: Int = 0 { didSet { restartBall() } }
-    private var scoreP2: Int = 0 { didSet { restartBall() } }
+    private var scoreP1: Int = 0 { didSet { kickOff() } }
+    private var scoreP2: Int = 0 { didSet { kickOff() } }
 
     override func didMove(to view: SKView) {
 
@@ -29,7 +29,7 @@ class GameScene: SKScene {
         guard let ballNode = self.childNode(withName: "ball") else { return }
 
         self.ballNode = ballNode
-        restartBall()
+        kickOff()
 
         // configuring the scene's surrounding physics body
         let worldBody: SKPhysicsBody = SKPhysicsBody(edgeLoopFrom: self.frame)
@@ -46,13 +46,9 @@ class GameScene: SKScene {
     fileprivate func kickOff() {
         let direction = Bool.random() ? 1.0 : -1.0
         let kick = 20.0 * direction
-        self.ballNode?.run(.applyImpulse(CGVector(dx: kick, dy: 0.0), duration: 0.1))
-    }
-
-    func restartBall() {
-        ballNode?.run(.move(to: .zero, duration: 0))
-
-        kickOff()
+        let impulse: SKAction = .applyImpulse(CGVector(dx: kick, dy: 0.0), duration: 0.1)
+        let move: SKAction = .move(to: .zero, duration: 0)
+        self.ballNode?.run(.group([impulse, move]))
     }
 
     // MARK: Touch functions
