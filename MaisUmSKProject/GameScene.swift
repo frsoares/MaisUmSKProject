@@ -16,12 +16,13 @@ class GameScene: SKScene {
     private var scoreNode: SKLabelNode?
     private var goalP1Node: SKNode?
     private var goalP2Node: SKNode?
-    private var scoreP1: Int = 0 { didSet { kickOff() } }
-    private var scoreP2: Int = 0 { didSet { kickOff() } }
+
+    var score: Score = Score()
 
     override func didMove(to view: SKView) {
 
         self.physicsWorld.contactDelegate = self
+        self.score.delegate = self
         self.scoreNode = self.childNode(withName: "score") as? SKLabelNode
         self.goalP1Node = self.childNode(withName: "goalP1")
         self.goalP2Node = self.childNode(withName: "goalP2")
@@ -97,7 +98,7 @@ class GameScene: SKScene {
     // MARK: update function
 
     override func update(_ currentTime: TimeInterval) {
-        scoreNode?.text = "\(scoreP1) x \(scoreP2)"
+        scoreNode?.text = "\(score.scoreP1) x \(score.scoreP2)"
     }
 }
 
@@ -109,9 +110,9 @@ extension GameScene: SKPhysicsContactDelegate {
         let bodies = [contact.bodyA, contact.bodyB]
         let nodes = bodies.map { $0.node }
         if nodes.contains([goalP1Node, ballNode]) {
-            scoreP2 += 1
+            score.scoreP2 += 1
         } else if nodes.contains([goalP2Node, ballNode]) {
-            scoreP1 += 1
+            score.scoreP1 += 1
         }
 
         for body in bodies {
@@ -123,5 +124,11 @@ extension GameScene: SKPhysicsContactDelegate {
 
     func didEnd(_ contact: SKPhysicsContact) {
 //        print("Contact ended between \(contact.bodyA) and \(contact.bodyB)")
+    }
+}
+
+extension GameScene: ScoreDelegate {
+    func scoreUpdated(score: Score) {
+        kickOff()
     }
 }
