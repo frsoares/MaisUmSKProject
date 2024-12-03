@@ -18,12 +18,14 @@ struct ContentView: View {
         return scene
     }()
 
+    @State var paused = false
+
     @ObservedObject var score: Score = Score()
 
     var body: some View {
-        SpriteView(scene: scene)
+        makeSpriteView(scene: scene)
             .overlay {
-                HUD(score: score)
+                HUD(score: score, isPaused: $paused)
             }
             .onAppear {
                 score.delegate = scene
@@ -31,6 +33,16 @@ struct ContentView: View {
                 // score with this observed one
                 scene.score = score
             }
+            .ignoresSafeArea()
+            .onChange(of: paused) { newValue in
+                scene.isPaused = newValue
+            }
+    }
+
+    func makeSpriteView(scene: SKScene?) -> SpriteView {
+        let debugOptions: SpriteView.DebugOptions = [.showsFPS, .showsNodeCount]
+        let spritesView = SpriteView(scene: scene ?? SKScene(), isPaused: paused, debugOptions: debugOptions)
+        return spritesView
     }
 }
 
